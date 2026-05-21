@@ -200,12 +200,8 @@ static __inline void *get_socket_from_fd(int fd_num,
 	void *file = NULL;
 #ifdef LINUX_VER_KFUNC
 	int files_off, fdt_off;
-	files_off = (int)((uintptr_t)
-			  __builtin_preserve_access_index
-			  (&((struct task_struct *)0)->files));
-	fdt_off = (int)((uintptr_t)
-			__builtin_preserve_access_index
-			(&((struct files_struct *)0)->fdt));
+	files_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct task_struct, files);
+	fdt_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct files_struct, fdt);
 	file = get_socket_file_addr_with_check(task, fd_num, files_off, fdt_off);
 #else
 	file =
@@ -218,9 +214,7 @@ static __inline void *get_socket_from_fd(int fd_num,
 		return NULL;
 	void *private_data = NULL;
 #ifdef LINUX_VER_KFUNC
-	int data_off = (int)((uintptr_t)
-			 __builtin_preserve_access_index(&((struct file *)
-							   0)->private_data));
+	int data_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct file, private_data);
 	bpf_probe_read_kernel(&private_data, sizeof(private_data),
 			      file + data_off);
 #else

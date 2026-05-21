@@ -99,6 +99,24 @@ typedef struct {
 	__u64 extra_data_b[PERF_MAX_STACK_DEPTH];
 } stack_t;
 
+static inline __attribute__ ((always_inline))
+void reset_stack(stack_t *stack)
+{
+	volatile __u64 *addrs = stack->addrs;
+	volatile __u8 *frame_types = stack->frame_types;
+	volatile __u64 *extra_data_a = stack->extra_data_a;
+	volatile __u64 *extra_data_b = stack->extra_data_b;
+
+	stack->len = 0;
+#pragma unroll
+	for (int i = 0; i < PERF_MAX_STACK_DEPTH; i++) {
+		addrs[i] = 0;
+		frame_types[i] = 0;
+		extra_data_a[i] = 0;
+		extra_data_b[i] = 0;
+	}
+}
+
 /*
  * Stack map for interpreter stacks (Python, PHP, V8).
  * Now uses stack_t to store frame_types and extra_data.
@@ -193,19 +211,9 @@ void reset_unwind_state(unwind_state_t * state)
 	state->runs = 0;
 	__builtin_memset(&state->regs, 0, sizeof(regs_t));
 
-	// Clear stack_t arrays to prevent stale data from being processed
-	// Use memset for each member separately to avoid verifier issues with large structs
-	state->stack.len = 0;
-	__builtin_memset(state->stack.addrs, 0, sizeof(state->stack.addrs));
-	__builtin_memset(state->stack.frame_types, 0, sizeof(state->stack.frame_types));
-	__builtin_memset(state->stack.extra_data_a, 0, sizeof(state->stack.extra_data_a));
-	__builtin_memset(state->stack.extra_data_b, 0, sizeof(state->stack.extra_data_b));
-
-	state->intp_stack.len = 0;
-	__builtin_memset(state->intp_stack.addrs, 0, sizeof(state->intp_stack.addrs));
-	__builtin_memset(state->intp_stack.frame_types, 0, sizeof(state->intp_stack.frame_types));
-	__builtin_memset(state->intp_stack.extra_data_a, 0, sizeof(state->intp_stack.extra_data_a));
-	__builtin_memset(state->intp_stack.extra_data_b, 0, sizeof(state->intp_stack.extra_data_b));
+	// Clear stack_t arrays to prevent stale data from being processed.
+	reset_stack(&state->stack);
+	reset_stack(&state->intp_stack);
 
 	state->py_frame_ptr = NULL;
 	state->py_offsets_id = 0;
@@ -774,7 +782,7 @@ __u32 find_shard(shard_info_t * list, int left, int right, __u64 pc)
 		if (i > j) {
 			return found;
 		}
-		mid = i + (j - i) / 2;
+		mid = i + ((__u32)(j - i) >> 1);
 		if (mid < 0 || mid >= UNWIND_SHARDS_PER_PROCESS) {
 			return ENTRY_NOT_FOUND;
 		}
@@ -801,7 +809,7 @@ __u32 find_unwind_entry(unwind_entry_t * list, __u16 left, __u16 right,
 		if (i > j) {
 			return found;
 		}
-		mid = i + (j - i) / 2;
+		mid = i + ((__u32)(j - i) >> 1);
 		if (mid < 0 || mid >= UNWIND_ENTRIES_PER_SHARD) {
 			return ENTRY_NOT_FOUND;
 		}

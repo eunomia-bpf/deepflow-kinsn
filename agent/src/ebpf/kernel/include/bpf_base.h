@@ -33,6 +33,8 @@
 
 struct task_struct;
 
+#define DF_BPF_CORE_FIELD_OFFSET(type, field) offsetof(type, field)
+
 #ifndef BPF_FUNC_task_pt_regs
 // Helper ID for bpf_task_pt_regs (introduced in Linux 5.15, GPL-only).
 #define BPF_FUNC_task_pt_regs 175

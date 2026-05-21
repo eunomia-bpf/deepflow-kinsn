@@ -266,8 +266,7 @@ static __u32 __inline get_tcp_write_seq_from_fd(int fd, void **sk,
 #ifndef LINUX_VER_KFUNC
 	seq_off = offset->tcp_sock__write_seq_offset;
 #else
-	seq_off = (int)((uintptr_t)
-	    __builtin_preserve_access_index(&((struct tcp_sock *)0)->write_seq));
+	seq_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct tcp_sock, write_seq);
 #endif
 	bpf_probe_read_kernel(&tcp_seq, sizeof(tcp_seq), sock + seq_off);
 	return tcp_seq;
@@ -300,8 +299,7 @@ static __u32 __inline get_tcp_read_seq_from_fd(int fd, void **sk,
 #ifndef LINUX_VER_KFUNC
 	seq_off = offset->tcp_sock__copied_seq_offset;
 #else
-	seq_off = (int)((uintptr_t)
-	    __builtin_preserve_access_index(&((struct tcp_sock *)0)->copied_seq));
+	seq_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct tcp_sock, copied_seq);
 #endif
 	bpf_probe_read_kernel(&tcp_seq, sizeof(tcp_seq), sock + seq_off);
 	return tcp_seq;
@@ -311,7 +309,7 @@ static bool __inline check_socket_valid(struct socket_info_s *socket_info_ptr, i
 {
 #ifdef LINUX_VER_KFUNC
 	if (is_socket_info_valid(socket_info_ptr)) {
-		int sk_off = (int)((uintptr_t) __builtin_preserve_access_index(&((struct sock *)0)->sk_socket));
+		int sk_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock, sk_socket);
 		void *check_socket;
 		bpf_probe_read_kernel(&check_socket, sizeof(check_socket),
 				      socket_info_ptr->sk + sk_off);
@@ -773,19 +771,15 @@ static __inline bool get_socket_info(struct __tuple_t *tuple, void *sk,
 	 */
 	switch (conn_info->skc_family) {
 	case PF_INET:
-		saddr_off = (int)((uintptr_t)
-		    __builtin_preserve_access_index(&((struct sock_common *)0)->skc_rcv_saddr));
-		daddr_off = (int)((uintptr_t)
-		    __builtin_preserve_access_index(&((struct sock_common *)0)->skc_daddr));
+		saddr_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock_common, skc_rcv_saddr);
+		daddr_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock_common, skc_daddr);
 		bpf_probe_read_kernel(tuple->rcv_saddr, 4, sk + saddr_off);
 		bpf_probe_read_kernel(tuple->daddr, 4, sk + daddr_off);
 		tuple->addr_len = 4;
 		break;
 	case PF_INET6:
-		ip6saddr_off = (int)((uintptr_t)
-		    __builtin_preserve_access_index(&((struct sock_common *)0)->skc_v6_rcv_saddr));
-		ip6daddr_off = (int)((uintptr_t)
-		    __builtin_preserve_access_index(&((struct sock_common *)0)->skc_v6_daddr));
+		ip6saddr_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock_common, skc_v6_rcv_saddr);
+		ip6daddr_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock_common, skc_v6_daddr);
 		bpf_probe_read_kernel(tuple->rcv_saddr, 16, sk + ip6saddr_off);
 		bpf_probe_read_kernel(tuple->daddr, 16, sk + ip6daddr_off);
 		tuple->addr_len = 16;
@@ -1454,7 +1448,7 @@ __data_submit(struct pt_regs *ctx, struct conn_info_s *conn_info,
 #if defined(LINUX_VER_KFUNC)
 		/* *INDENT-OFF* */
 		sk_info->sk = args->sk;
-		int sk_off = (int)((uintptr_t) __builtin_preserve_access_index(&((struct sock *)0)->sk_socket));
+		int sk_off = (int)DF_BPF_CORE_FIELD_OFFSET(struct sock, sk_socket);
 		bpf_probe_read_kernel(&sk_info->socket, sizeof(sk_info->socket), args->sk + sk_off);
 		/* *INDENT-ON* */
 #endif

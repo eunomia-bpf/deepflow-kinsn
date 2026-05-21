@@ -400,7 +400,7 @@ void *frame_prevl_wr(void *frame, lj_ofs *lj)
 		return NULL;
 	}
 
-	const void *pc = (const void *)(uintptr_t)savedpc_raw;
+	const void *pc = (const void *)(__u64)savedpc_raw;
 	if (!pc) {
 		return NULL;
 	}

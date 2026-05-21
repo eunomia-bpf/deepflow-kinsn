@@ -1349,7 +1349,7 @@ static __inline enum message_type infer_iso8583_message(const char *buf,
 	if (buffer[0] != '0' || buffer[1] != '0' || buffer[2] != '0' || buffer[3] != '0' || buffer[4] != '0') {
 		return MSG_UNKNOWN;
 	}
-	if (buffer[7] % 2 == 1) {
+	if (((__u8)buffer[7] & 1) == 1) {
 		return MSG_RESPONSE;
 	}
 	return MSG_REQUEST;
